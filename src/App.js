@@ -1,25 +1,50 @@
-import logo from './logo.svg';
-import './App.css';
+import React,{useState,useEffect} from "react";
+import Login from './components/Login';
+import { useImmer } from "use-immer";
+import axios from "./utils/Axios";
+import useLocalstorage from './Hooks/useLocalstorage';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+
+export default function App(){
+  const [user, setUser] = useImmer({
+    mobileNumber: "",
+    verificationCode : "",
+    verificationSent : false,
+  });
+  const [storedToken, setToken] = useLocalstorage('token', null);
+
+  
+
+
+  function sendSMSCode() {
+    axios.post("https://bringonstore-backend.herokuapp.com/api/v1/auth/loginviaOtp", {
+      to: user.mobileNumber,
+      channel : 'sms'
+    });
+
+    setUser((draft) => {
+      draft.verificationSent = true;
+    });
+
+  }
+  async function sendverificationCode() {
+    console.log('Verify mobile number')
+    const response = await axios.post('https://bringonstore-backend.herokuapp.com/api/v1/auth/verifyOtp', {
+      to: user.mobileNumber,
+      code : user.verificationCode,
+    });
+    console.log('received token', response.data.token);
+    setToken(response.data.token)
+  }
+
+
+
+  return(
+    <div>
+  
+ <Login user={user} setUser={setUser} sendSMSCode={sendSMSCode} sendverificationCode={sendverificationCode}  />
+
+
     </div>
-  );
+  )
 }
-
-export default App;
